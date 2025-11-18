@@ -7,7 +7,7 @@ from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from src.database.database import init_db
-from src.routers import auth, chats, statistics
+from src.routers import auth, chat, chats, statistics
 
 
 @asynccontextmanager
@@ -33,6 +33,7 @@ app.add_middleware(
 
 api_router = APIRouter(prefix="/api")
 api_router.include_router(auth.router)
+api_router.include_router(chat.router)
 api_router.include_router(chats.router)
 api_router.include_router(statistics.router)
 
@@ -61,6 +62,10 @@ async def root():
                     "register": "/api/auth/register",
                     "login": "/api/auth/login",
                 },
+                "chat": {
+                    "send": "/api/chat?chat_id={chat_id}",
+                    "stream": "/api/chat/stream?chat_id={chat_id}",
+                },
                 "chats": {
                     "create": "/api/chats",
                     "list": "/api/chats",
@@ -75,6 +80,15 @@ async def root():
             },
         }
 
+@app.get("/login")
+async def login_page():
+    """Serve the login page"""
+    login_file = Path("static/login.html")
+    if login_file.exists():
+        return FileResponse(login_file)
+    else:
+        return {"message": "Login page not found"}
+
 
 @app.get("/api/info")
 async def api_info():
@@ -87,6 +101,10 @@ async def api_info():
             "auth": {
                 "register": "/api/auth/register",
                 "login": "/api/auth/login",
+            },
+            "chat": {
+                "send": "/api/chat?chat_id={chat_id}",
+                "stream": "/api/chat/stream?chat_id={chat_id}",
             },
             "chats": {
                 "create": "/api/chats",

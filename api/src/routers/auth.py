@@ -1,9 +1,11 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from ..core.dependencies import security
 from ..core.sessions import SessionManager
 from ..database.database import get_db
 from ..schemas import LoginRequest, LoginResponse, RegisterRequest
@@ -37,3 +39,21 @@ async def login(
 
     session = await manager.create_session(user.id)
     return LoginResponse(session_id=session.id, user_id=user.id, username=user.username)
+
+
+@router.post("/auth/logout")
+async def logout(
+    credentials: Annotated[HTTPAuthorizationCredentials, Depends(security)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    manager = SessionManager(db)
+    session_id = credentials.credentials
+    deleted = await manager.delete_session(session_id)
+    
+    # If session doesn't exist, it might already be expired/deleted, but we still return success
+    # The frontend will handle this gracefully
+    if not deleted:
+        # Return success anyway - session might have already expired
+        return {"message": "Logged out (session was already expired or not found)"}
+    
+    return {"message": "Logged out successfully"}

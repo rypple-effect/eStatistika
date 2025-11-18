@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 from uuid import uuid4
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database.models import Session, User
@@ -46,7 +46,7 @@ class SessionManager:
     async def delete_session(self, session_id: str) -> bool:
         session = await self.get_session(session_id)
         if session:
-            await self.db.delete(session)
+            await self.db.execute(delete(Session).where(Session.id == session_id))
             await self.db.commit()
             return True
         return False

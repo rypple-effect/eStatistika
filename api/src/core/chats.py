@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from typing import Optional
 from uuid import uuid4
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database.models import Chat, Message
@@ -32,7 +32,10 @@ class ChatManager:
     async def delete_chat(self, chat_id: str) -> bool:
         chat = await self.get_chat(chat_id)
         if chat:
-            await self.db.delete(chat)
+            # Delete messages first (due to foreign key constraint)
+            await self.db.execute(delete(Message).where(Message.chat_id == chat_id))
+            # Then delete the chat
+            await self.db.execute(delete(Chat).where(Chat.id == chat_id))
             await self.db.commit()
             return True
         return False

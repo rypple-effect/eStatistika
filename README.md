@@ -1,7 +1,6 @@
-# Build Club x Meta - AI Chat API - 🤖eStatistika
+# Build Club x Meta - AI Chat API
 
 AI-powered chat service built with FastAPI, Ollama (Llama 3.2), and PostgreSQL.
-A statistics finder based for the trend.
 
 ## Features
 
@@ -134,7 +133,7 @@ curl -X POST "http://localhost:8081/api/chat/stream" \
 ### Register a User
 
 ```bash
-curl -X POST "http://localhost:8083/api/auth/register" \
+curl -X POST "http://localhost:8081/api/auth/register" \
   -H "Content-Type: application/json" \
   -d '{
     "username": "testuser",
@@ -145,7 +144,7 @@ curl -X POST "http://localhost:8083/api/auth/register" \
 ### Login
 
 ```bash
-curl -X POST "http://localhost:8083/api/auth/login" \
+curl -X POST "http://localhost:8081/api/auth/login" \
   -H "Content-Type: application/json" \
   -d '{
     "username": "testuser",
@@ -278,4 +277,3 @@ For issues or questions:
 2. Check [api/README.md](api/README.md) for API-specific documentation
 3. Review Ollama and FastAPI documentation
 4. Open an issue in the repository
-

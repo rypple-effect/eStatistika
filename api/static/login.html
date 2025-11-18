@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - eSTATISTIKA</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .login-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 450px;
+            width: 100%;
+            padding: 40px;
+        }
+        
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo h1 {
+            color: #333;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .logo p {
+            color: #666;
+            font-size: 1rem;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+        
+        input {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        button {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .secondary-button {
+            background: transparent;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+        
+        .secondary-button:hover {
+            background: rgba(102, 126, 234, 0.05);
+        }
+        
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border-left: 4px solid #c33;
+        }
+        
+        .success {
+            background: #efe;
+            color: #3c3;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border-left: 4px solid #3c3;
+        }
+        
+        .divider {
+            text-align: center;
+            margin: 25px 0;
+            color: #999;
+            position: relative;
+        }
+        
+        .divider::before,
+        .divider::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 40%;
+            height: 1px;
+            background: #e0e0e0;
+        }
+        
+        .divider::before {
+            left: 0;
+        }
+        
+        .divider::after {
+            right: 0;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">
+            <h1>🤖 eSTATISTIKA</h1>
+            <p>AI-Powered Statistics Generator</p>
+        </div>
+        
+        <div id="auth-message"></div>
+        
+        <form id="login-form" onsubmit="event.preventDefault(); login();">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" placeholder="Enter your username" required autofocus>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="Enter your password" required>
+            </div>
+            <button type="submit" id="login-button">Login</button>
+        </form>
+        
+        <div class="divider">or</div>
+        
+        <button class="secondary-button" onclick="register()" id="register-button">Create New Account</button>
+    </div>
+    
+    <script>
+        const API_BASE = window.location.origin;
+        let authToken = localStorage.getItem('authToken');
+        
+        // Check if already logged in
+        if (authToken) {
+            window.location.href = '/';
+        }
+        
+        // Allow Enter key to submit
+        document.getElementById('password').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                login();
+            }
+        });
+        
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const messageDiv = document.getElementById('auth-message');
+            const loginButton = document.getElementById('login-button');
+            
+            if (!username || !password) {
+                messageDiv.innerHTML = '<div class="error">Please enter username and password</div>';
+                return;
+            }
+            
+            loginButton.disabled = true;
+            loginButton.innerHTML = '<span class="loading"></span>Logging in...';
+            messageDiv.innerHTML = '';
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password }),
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    authToken = data.session_id;
+                    localStorage.setItem('authToken', authToken);
+                    messageDiv.innerHTML = '<div class="success">Login successful! Redirecting...</div>';
+                    
+                    // Redirect to main page
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 500);
+                } else {
+                    let errorMessage = 'Login failed';
+                    try {
+                        const data = await response.json();
+                        if (data.detail) {
+                            if (Array.isArray(data.detail)) {
+                                errorMessage = data.detail.map(err => {
+                                    if (typeof err === 'object' && err.msg) {
+                                        return `${err.loc ? err.loc.join('.') : 'Field'}: ${err.msg}`;
+                                    }
+                                    return String(err);
+                                }).join(', ');
+                            } else {
+                                errorMessage = String(data.detail);
+                            }
+                        } else if (data.message) {
+                            errorMessage = String(data.message);
+                        }
+                    } catch (parseError) {
+                        errorMessage = response.status === 401 ? 'Invalid username or password' : response.statusText || 'Login failed';
+                    }
+                    
+                    messageDiv.innerHTML = `<div class="error">${errorMessage}</div>`;
+                    loginButton.disabled = false;
+                    loginButton.textContent = 'Login';
+                }
+            } catch (error) {
+                messageDiv.innerHTML = `<div class="error">Error: ${error.message || 'Network error occurred'}</div>`;
+                loginButton.disabled = false;
+                loginButton.textContent = 'Login';
+            }
+        }
+        
+        async function register() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const messageDiv = document.getElementById('auth-message');
+            const registerButton = document.getElementById('register-button');
+            
+            if (!username || !password) {
+                messageDiv.innerHTML = '<div class="error">Please enter username and password</div>';
+                return;
+            }
+            
+            if (username.length < 3) {
+                messageDiv.innerHTML = '<div class="error">Username must be at least 3 characters long</div>';
+                return;
+            }
+            
+            if (password.length < 6) {
+                messageDiv.innerHTML = '<div class="error">Password must be at least 6 characters long</div>';
+                return;
+            }
+            
+            registerButton.disabled = true;
+            registerButton.innerHTML = '<span class="loading"></span>Creating account...';
+            messageDiv.innerHTML = '';
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/auth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password }),
+                });
+                
+                let errorMessage = 'Registration failed';
+                
+                if (response.ok) {
+                    messageDiv.innerHTML = '<div class="success">Registration successful! Please login.</div>';
+                    registerButton.disabled = false;
+                    registerButton.textContent = 'Create New Account';
+                    return;
+                }
+                
+                try {
+                    const data = await response.json();
+                    if (data.detail) {
+                        if (Array.isArray(data.detail)) {
+                            errorMessage = data.detail.map(err => {
+                                if (typeof err === 'object' && err.msg) {
+                                    return `${err.loc ? err.loc.join('.') : 'Field'}: ${err.msg}`;
+                                }
+                                return String(err);
+                            }).join(', ');
+                        } else {
+                            errorMessage = String(data.detail);
+                        }
+                    } else if (data.message) {
+                        errorMessage = String(data.message);
+                    }
+                } catch (parseError) {
+                    errorMessage = response.statusText || 'Registration failed';
+                }
+                
+                messageDiv.innerHTML = `<div class="error">${errorMessage}</div>`;
+                registerButton.disabled = false;
+                registerButton.textContent = 'Create New Account';
+            } catch (error) {
+                messageDiv.innerHTML = `<div class="error">Error: ${error.message || 'Network error occurred'}</div>`;
+                registerButton.disabled = false;
+                registerButton.textContent = 'Create New Account';
+            }
+        }
+    </script>
+</body>
+</html>
+

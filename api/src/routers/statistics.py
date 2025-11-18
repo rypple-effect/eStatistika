@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from ..core.chats import ChatManager
 from ..core.dependencies import get_current_user
 from ..core.statistics import StatisticsManager
 from ..database.database import get_db
@@ -25,6 +26,7 @@ async def create_statistics_request(
     """
     Create a statistics request. The AI will generate statistics based on the user's query.
     The response includes the date, source, and statistical information.
+    Also creates a chat with messages for chat history.
     """
     try:
         # Generate statistics using AI
@@ -40,6 +42,29 @@ async def create_statistics_request(
             response=ai_response["response"],
             source=ai_response["source"],
         )
+        
+        # Create a chat and add messages for chat history
+        try:
+            chat_manager = ChatManager(db)
+            chat = await chat_manager.create_chat(current_user.id)
+            
+            # Add user's question as a message
+            await chat_manager.add_message(
+                chat_id=chat.id,
+                role="user",
+                content=request.query
+            )
+            
+            # Add AI's response as a message
+            await chat_manager.add_message(
+                chat_id=chat.id,
+                role="assistant",
+                content=ai_response["response"]
+            )
+        except Exception as chat_error:
+            # If chat creation fails, log but don't fail the statistics request
+            # This ensures statistics requests still work even if chat creation fails
+            print(f"Warning: Failed to create chat for statistics request: {chat_error}")
         
         return StatisticsResponse(
             id=stats_request.id,
